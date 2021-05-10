@@ -4,3 +4,4 @@ matplotlib
 xlrd
 openpyxl
 scipy
+numpy
