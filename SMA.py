@@ -1,4 +1,5 @@
 import pandas as pd
+import scipy as sp
 import streamlit as st
 import matplotlib.pyplot as plt
 
@@ -10,6 +11,7 @@ if Path is not None:
     Sheet_names=Data.sheet_names
     mode=st.sidebar.radio('MODE SELECT',("MONO","POLY"))
     ions=st.sidebar.multiselect("Ions",Sheet_names,Sheet_names)
+    hanrei=st.sidebar.radio('Legend',("IN","OUT"))
 
     if mode=="MONO":
         num=st.sidebar.selectbox('SMA lines',[0,1,2,3],index=3)
@@ -32,24 +34,40 @@ if Path is not None:
             plt.title(Sheet_name)
             plt.xlabel("Time(min)")
             plt.ylabel("Absolute Intensity")
-            plt.legend()
+            if hanrei=="IN":
+                ax.legend()
+            else:
+                ax.legend(loc='upper left', bbox_to_anchor=(1, 1))
             ax.ticklabel_format(useOffset=False,useMathText=True)
             st.pyplot(fig)
     
     if mode=="POLY":
-        span=st.sidebar.slider("SMA span",1,51,1,2)
+        span=st.sidebar.slider("SMA span",1,121,1,2)
+        standardization=st.sidebar.checkbox('Standardization',value=True)
         fig,ax=plt.subplots()
+
         for Sheet_name in ions:
             df=pd.read_excel(Path,sheet_name=Sheet_name,skiprows=skip_rows)
             df["SMA"]=df[intensity].rolling(window=span,center=True).mean()
-            plt.plot(df[time],df["SMA"],label=Sheet_name)
+            if standardization==False:
+                plt.plot(df[time],df["SMA"],label=Sheet_name)
+                plt.ylabel("Absolute Intensity")
+            else:
+                mu=sp.mean(df["SMA"])
+                sigma=sp.std(df["SMA"],ddof=1)
+                df["STD"]=(df["SMA"]-mu)/sigma
+                plt.plot(df[time],df["STD"],label=Sheet_name)
+                plt.ylabel("Standardized Intensity")
         if span==1:
             title="raw"
         else:
             title="span="+str(span)
         plt.title(title)
         plt.xlabel("Time(min)")
-        plt.ylabel("Absolute Intensity")
-        plt.legend()
+        
+        if hanrei=="IN":
+            ax.legend()
+        else:
+            ax.legend(loc='upper left', bbox_to_anchor=(1, 1))
         ax.ticklabel_format(useOffset=False,useMathText=True)
         st.pyplot(fig)
