@@ -43,7 +43,8 @@ if Path is not None:
     
     if mode=="POLY":
         span=st.sidebar.slider("SMA span",1,121,1,2)
-        standardization=st.sidebar.checkbox('Standardization',value=True)
+        standardization=st.sidebar.checkbox('Standardization',value=False)
+        centerline=st.sidebar.checkbox('Center Line',value=False)
         fig,ax=plt.subplots()
 
         for Sheet_name in ions:
@@ -70,4 +71,6 @@ if Path is not None:
         else:
             ax.legend(loc='upper left', bbox_to_anchor=(1, 1))
         ax.ticklabel_format(useOffset=False,useMathText=True)
+        if centerline==True:
+            ax.axvline(0.5,ls="--",c="k")
         st.pyplot(fig)
