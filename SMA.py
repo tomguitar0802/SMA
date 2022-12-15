@@ -2,6 +2,7 @@ import pandas as pd
 import scipy as sp
 import streamlit as st
 import matplotlib.pyplot as plt
+import numpy as np
 
 Path=st.sidebar.file_uploader('Excel')
 skip_rows,time,intensity=3,"Time","Intensity"
@@ -21,18 +22,18 @@ if Path is not None:
         for Sheet_name in ions:
             df=pd.read_excel(Path,sheet_name=Sheet_name,skiprows=skip_rows)
             fig,ax=plt.subplots()
-            plt.plot(df[time],df[intensity],label="raw")
+            plt.plot(df[time]*60,df[intensity],label="raw")
             if num>=1:
                 df["SMA1"]=df[intensity].rolling(window=span1,center=True).mean()
-                plt.plot(df[time],df["SMA1"],label="span="+str(span1))
+                plt.plot(df[time]*60,df["SMA1"],label="span="+str(span1))
             if num>=2:            
                 df["SMA2"]=df[intensity].rolling(window=span2,center=True).mean()
-                plt.plot(df[time],df["SMA2"],label="span="+str(span2))
+                plt.plot(df[time]*60,df["SMA2"],label="span="+str(span2))
             if num>=3:            
                 df["SMA3"]=df[intensity].rolling(window=span3,center=True).mean()
-                plt.plot(df[time],df["SMA3"],label="span="+str(span3))
+                plt.plot(df[time]*60,df["SMA3"],label="span="+str(span3))
             plt.title(Sheet_name)
-            plt.xlabel("Time(min)")
+            plt.xlabel("Time(s)")
             plt.ylabel("Absolute Intensity")
             if hanrei=="IN":
                 ax.legend()
@@ -44,33 +45,49 @@ if Path is not None:
     if mode=="POLY":
         span=st.sidebar.slider("SMA span",1,121,1,2)
         standardization=st.sidebar.checkbox('Standardization',value=False)
-        centerline=st.sidebar.checkbox('Center Line',value=False)
         fig,ax=plt.subplots()
 
         for Sheet_name in ions:
             df=pd.read_excel(Path,sheet_name=Sheet_name,skiprows=skip_rows)
             df["SMA"]=df[intensity].rolling(window=span,center=True).mean()
             if standardization==False:
-                plt.plot(df[time],df["SMA"],label=Sheet_name)
+                plt.plot(df[time]*60,df["SMA"],label=Sheet_name)
                 plt.ylabel("Absolute Intensity")
             else:
                 mu=sp.mean(df["SMA"])
                 sigma=sp.std(df["SMA"],ddof=1)
                 df["STD"]=(df["SMA"]-mu)/sigma
-                plt.plot(df[time],df["STD"],label=Sheet_name)
+                plt.plot(df[time]*60,df["STD"],label=Sheet_name)
                 plt.ylabel("Standardized Intensity")
-        if span==1:
-            title="raw"
-        else:
-            title="span="+str(span)
-        plt.title(title)
-        plt.xlabel("Time(min)")
+        
+        plt.xlabel("Time(s)")
         
         if hanrei=="IN":
             ax.legend()
         else:
             ax.legend(loc='upper left', bbox_to_anchor=(1, 1))
         ax.ticklabel_format(useOffset=False,useMathText=True)
-        if centerline==True:
-            ax.axvline(0.5,ls="--",c="k")
+        st.pyplot(fig)
+        
+        fig,ax=plt.subplots()
+        for Sheet_name in ions:
+            df=pd.read_excel(Path,sheet_name=Sheet_name,skiprows=skip_rows)
+            df["SMA"]=df[intensity].rolling(window=span,center=True).mean()
+            if standardization==False:
+                plt.ylabel("Absolute Intensity")
+                plt.plot(df[time]*60,df.diff()["SMA"],label=Sheet_name)
+            else:
+                mu=sp.mean(df["SMA"])
+                sigma=sp.std(df["SMA"],ddof=1)
+                df["STD"]=(df["SMA"]-mu)/sigma
+                plt.ylabel("Standardized Intensity")
+                plt.plot(df[time]*60,df.diff()["STD"],label=Sheet_name)
+ 
+        if hanrei=="IN":
+            ax.legend()
+        else:
+            ax.legend(loc='upper left', bbox_to_anchor=(1, 1))
+        ax.ticklabel_format(useOffset=False,useMathText=True)
+        
+        plt.xlabel("Time(s)")
         st.pyplot(fig)
